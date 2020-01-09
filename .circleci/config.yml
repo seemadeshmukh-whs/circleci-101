@@ -22,7 +22,7 @@ jobs: # basic units of work in a run
       - run:
           name: Build Docker Image
           command:
-            docker build
+            docker build .
 
       - store_artifacts: # upload test summary for display in Artifacts
           path: /tmp/test-results
