@@ -1,68 +1,58 @@
 version: 2 # use CircleCI 2.0
 jobs: # basic units of work in a run
   test:
+    # working_directory: /tmp/workspace
     docker: # run the steps with Docker
       # CircleCI Go images available at: https://hub.docker.com/r/circleci/golang/
       - image: golang:1.13-alpine
-
     environment: # environment variables for the build itself
-      TEST_RESULTS: /tmp/test-results # path to where test results will be saved
-
+      TEST_RESULTS: test-results # path to where test results will be saved
     steps: # steps that comprise the `build` job
       - checkout # check out source code to working directory
       - run: mkdir -p $TEST_RESULTS # create the test results directory
-
       - run:
           name: Run unit tests
-
           # store the results of our tests in the $TEST_RESULTS directory
           command: |
+            echo $CIRCLE_WORKING_DIRECTORY
             go test -v ./...
-
       - store_artifacts: # upload test summary for display in Artifacts
-          path: /tmp/test-results
+          path: test-results
           destination: raw-test-output
-
       - store_test_results: # upload test results for display in Test Summary
-          path: /tmp/test-results
-
-      - persist_to_workspace:
-          root: /tmp/test-results
+          path: test-results
 
   build:
-    type: approval
     machine: true
-
     environment: # environment variables for the build itself
-      TEST_RESULTS: /tmp/test-results # path to where test results will be saved
-
+      TEST_RESULTS: test-results # path to where test results will be saved
     steps: # steps that comprise the `build` job
-      # - checkout # check out source code to working directory
-      # - run: mkdir -p $TEST_RESULTS # create the test results directory
-
+      - checkout # check out source code to working directory
+      - run: mkdir -p $TEST_RESULTS # create the test results directory
       - run:
           name: Build Docker Image
           command: |
+            ls -la
             docker build -t hellow-world:latest .
-            docker save -o /tmp/test-results/hellow-world.tar hellow-world:latest
-
+            docker save -o test-results/hellow-world.tar hellow-world:latest
+      - persist_to_workspace:
+          root: .
+          paths:
+            - test-results
       - store_artifacts: # upload test summary for display in Artifacts
-          path: /tmp/test-results
+          path: test-results
           destination: raw-test-output
 
-      - store_test_results: # upload test results for display in Test Summary
-          path: /tmp/test-results
-
-  approval:
-    machine: true # run the steps with Docker
-    requires:
-      - build
+  deploy:
+    machine: true
     steps: # steps that comprise the `build` job
-      # - checkout # check out source code to working directory
+      - attach_workspace:
+          at: .
       - run:
-          name: Save Docker Image
+          name: Run a Service
           command: |
-            docker save -o /tmp/test-results/hellow-world.tar hellow-world:latest
+            docker load --input test-results/hellow-world.tar
+            docker run --name hellow-world hellow-world:latest
 
 
 workflows:
@@ -71,4 +61,10 @@ workflows:
     jobs:
       - test
       - build
-      - approval
+      - approval:
+          type: approval
+          requires:
+            - build
+      - deploy:
+          requires:
+            - approval
