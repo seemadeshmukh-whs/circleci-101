@@ -71,19 +71,19 @@ workflows:
   version: 2
   build-workflow:
     jobs:
-      - test_context:
-          context: secrets
-
-      # - test
-      # - build
-      # - approval:
-      #     type: approval
-      #     requires:
-      #       - build
-      # - slack/approval-notification:
-      #     message: Pending approval
+      # - test_context:
       #     context: secrets
-      # - deploy:
-      #     requires:
-      #       - approval
+      - test
+      - build
+      - slack/approval-notification:
+          message: Pending approval
+          requires:
+            - build
+      - approval:
+          type: approval
+          requires:
+            - build
+      - deploy:
+          requires:
+            - approval
 
