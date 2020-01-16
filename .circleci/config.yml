@@ -61,8 +61,10 @@ jobs: # basic units of work in a run
   test_context:
     machine: true
     steps:
-      - command: |
-          echo $SLACK_WEBHOOK
+      - run:
+          name: Test context
+          command: |
+            echo $SLACK_WEBHOOK
 
 
 workflows:
