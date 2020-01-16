@@ -58,14 +58,20 @@ jobs: # basic units of work in a run
             docker load --input test-results/hellow-world.tar
             docker run --name hellow-world hellow-world:latest
 
+  test_context:
+    machine: true
+    steps:
+      - command: |
+          echo $SLACK_WEBHOOK
+
+
 workflows:
   version: 2
   build-workflow:
     jobs:
-      - test:
+      - test_context:
           context: secrets
-          command: |
-            echo $SLACK_WEBHOOK
+
       # - test
       # - build
       # - approval:
